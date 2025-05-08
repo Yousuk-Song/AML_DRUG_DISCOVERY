@@ -238,6 +238,6 @@ get_multi_omics_gene_values(seurat_obj, "OCIAML5_HAEMATOPOIETIC_AND_LYMPHOID_TIS
 get_multi_omics_gene_values(seurat_obj, "CAL120_BREAST", "TP53")
 
 
-saveRDS(seurat_obj, "/data/processed_data/scRSEQ_AML/DRUG/CCLE/CCLE_multi_omics_data.rds")
+#saveRDS(seurat_obj, "/data/processed_data/scRSEQ_AML/DRUG/CCLE/CCLE_multi_omics_data.rds")
 
 
