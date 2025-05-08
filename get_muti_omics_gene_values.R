@@ -127,11 +127,12 @@ crispr_df_avg <- average_by_gene(crispr_df, crispr_genes)
 
 # CRISPR: Seurat와 cell line 겹치는 것만 필터링
 common_crispr_cells <- intersect(rownames(seurat_obj@meta.data), rownames(crispr_df_avg))
-seurat_obj@misc$CRISPR_SCORES <- crispr_df_avg[common_crispr_cells, , drop = FALSE]
+seurat_obj@misc$CRISPR_SCORES <- as.matrix(crispr_df_avg[common_crispr_cells, , drop = FALSE])
 
 # RNAi: Seurat와 cell line 겹치는 것만 필터링
 common_rnai_cells <- intersect(rownames(seurat_obj@meta.data), rownames(rnai_df_avg))
-seurat_obj@misc$RNAi_SCORES <- rnai_df_avg[common_rnai_cells, , drop = FALSE]
+seurat_obj@misc$RNAi_SCORES   <- as.matrix(rnai_df_avg[common_rnai_cells, , drop = FALSE])
+
 
 
 #============================#
@@ -177,40 +178,48 @@ get_multi_omics_gene_values <- function(seurat_obj, cell_line, gene_symbol, map_
     seurat_obj@assays$RNA@counts[gene_symbol, cell_line]
   }, error = function(e) NA)
   
-  # 3. RNA normalized (log-normalized)
+  # 3. RNA log-normalized
   rna_norm <- tryCatch({
     seurat_obj@assays$RNA@data[gene_symbol, cell_line]
   }, error = function(e) NA)
   
-  # 4. CRISPR
+  # 4. CRISPR score (matrix)
   crispr_val <- tryCatch({
-    seurat_obj@misc$CRISPR_SCORES[cell_line, gene_symbol]
+    if (!is.null(seurat_obj@misc$CRISPR_SCORES) && 
+        gene_symbol %in% colnames(seurat_obj@misc$CRISPR_SCORES) &&
+        cell_line %in% rownames(seurat_obj@misc$CRISPR_SCORES)) {
+      seurat_obj@misc$CRISPR_SCORES[cell_line, gene_symbol]
+    } else NA
   }, error = function(e) NA)
   
-  # 5. RNAi
+  # 5. RNAi score (matrix)
   rnai_val <- tryCatch({
-    seurat_obj@misc$RNAi_SCORES[cell_line, gene_symbol]
+    if (!is.null(seurat_obj@misc$RNAi_SCORES) && 
+        gene_symbol %in% colnames(seurat_obj@misc$RNAi_SCORES) &&
+        cell_line %in% rownames(seurat_obj@misc$RNAi_SCORES)) {
+      seurat_obj@misc$RNAi_SCORES[cell_line, gene_symbol]
+    } else NA
   }, error = function(e) NA)
   
   # 6. MS proteomics
   ms_val <- tryCatch({
-    if (!is.null(uniprot_id)) {
+    if (!is.null(uniprot_id) && 
+        uniprot_id %in% colnames(seurat_obj@misc$MS_PROTEOMICS) &&
+        cell_line %in% rownames(seurat_obj@misc$MS_PROTEOMICS)) {
       seurat_obj@misc$MS_PROTEOMICS[cell_line, uniprot_id]
-    } else {
-      NA
-    }
+    } else NA
   }, error = function(e) NA)
   
   # 7. PPRA proteomics
   ppra_val <- tryCatch({
-    if (!is.null(uniprot_id)) {
+    if (!is.null(uniprot_id) && 
+        uniprot_id %in% colnames(seurat_obj@misc$PPRA_PROTEOMICS) &&
+        cell_line %in% rownames(seurat_obj@misc$PPRA_PROTEOMICS)) {
       seurat_obj@misc$PPRA_PROTEOMICS[cell_line, uniprot_id]
-    } else {
-      NA
-    }
+    } else NA
   }, error = function(e) NA)
   
-  # 8. Return all
+  # 8. Output
   return(list(
     RNA_raw_counts     = rna_raw,
     RNA_logNormalized  = rna_norm,
@@ -222,11 +231,8 @@ get_multi_omics_gene_values <- function(seurat_obj, cell_line, gene_symbol, map_
   ))
 }
 
-
 # Example usage:
 get_multi_omics_gene_values(seurat_obj, "OCIAML5_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE", "NRAS")
 get_multi_omics_gene_values(seurat_obj, "CAL120_BREAST", "TP53")
-
-
 
 
