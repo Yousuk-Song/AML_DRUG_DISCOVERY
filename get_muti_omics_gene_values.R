@@ -236,3 +236,5 @@ get_multi_omics_gene_values <- function(seurat_obj, cell_line, gene_symbol, map_
 # Example usage:
 get_multi_omics_gene_values(seurat_obj, "OCIAML5_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE", "NRAS")
 get_multi_omics_gene_values(seurat_obj, "CAL120_BREAST", "TP53")
+
+#saveRDS(seurat_obj, "/data/processed_data/scRSEQ_AML/DRUG/CCLE/CCLE_multi_omics_data.rds")                       
