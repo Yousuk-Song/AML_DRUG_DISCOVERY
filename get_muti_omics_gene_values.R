@@ -89,9 +89,10 @@ rownames(PPRA_mat)[!is.na(match(rownames(PPRA_mat), model_map$ModelID))] <-
   model_map$CCLEName[match(rownames(PPRA_mat), model_map$ModelID)]
 
 # Store in Seurat
-seurat_obj@misc$MS_PROTEOMICS   <- MS_mat[intersect(rownames(MS_mat), rownames(seurat_obj@meta.data)), , drop = FALSE]
-seurat_obj@misc$PPRA_PROTEOMICS <- PPRA_mat[intersect(rownames(PPRA_mat), rownames(seurat_obj@meta.data)), , drop = FALSE]
-
+#seurat_obj@misc$MS_PROTEOMICS   <- MS_mat[intersect(rownames(MS_mat), rownames(seurat_obj@meta.data)), , drop = FALSE]
+#seurat_obj@misc$PPRA_PROTEOMICS <- PPRA_mat[intersect(rownames(PPRA_mat), rownames(seurat_obj@meta.data)), , drop = FALSE]
+seurat_obj@misc$MS_PROTEOMICS   <- MS_mat
+seurat_obj@misc$PPRA_PROTEOMICS <- PPRA_mat
 
 #============================#
 # 3. Genetic Perturbation: RNAi & CRISPR
@@ -126,13 +127,14 @@ rnai_df_avg   <- average_by_gene(rnai_df, rnai_genes)
 crispr_df_avg <- average_by_gene(crispr_df, crispr_genes)
 
 # CRISPR: Seurat와 cell line 겹치는 것만 필터링
-common_crispr_cells <- intersect(rownames(seurat_obj@meta.data), rownames(crispr_df_avg))
-seurat_obj@misc$CRISPR_SCORES <- as.matrix(crispr_df_avg[common_crispr_cells, , drop = FALSE])
+#common_crispr_cells <- intersect(rownames(seurat_obj@meta.data), rownames(crispr_df_avg))
+#seurat_obj@misc$CRISPR_SCORES <- as.matrix(crispr_df_avg[common_crispr_cells, , drop = FALSE])
+seurat_obj@misc$CRISPR_SCORES <- as.matrix(crispr_df_avg)
 
 # RNAi: Seurat와 cell line 겹치는 것만 필터링
-common_rnai_cells <- intersect(rownames(seurat_obj@meta.data), rownames(rnai_df_avg))
-seurat_obj@misc$RNAi_SCORES   <- as.matrix(rnai_df_avg[common_rnai_cells, , drop = FALSE])
-
+#common_rnai_cells <- intersect(rownames(seurat_obj@meta.data), rownames(rnai_df_avg))
+#seurat_obj@misc$RNAi_SCORES   <- as.matrix(rnai_df_avg[common_rnai_cells, , drop = FALSE])
+seurat_obj@misc$RNAi_SCORES   <- as.matrix(rnai_df_avg)
 
 
 #============================#
@@ -234,5 +236,3 @@ get_multi_omics_gene_values <- function(seurat_obj, cell_line, gene_symbol, map_
 # Example usage:
 get_multi_omics_gene_values(seurat_obj, "OCIAML5_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE", "NRAS")
 get_multi_omics_gene_values(seurat_obj, "CAL120_BREAST", "TP53")
-
-
