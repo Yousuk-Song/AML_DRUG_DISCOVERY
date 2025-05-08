@@ -125,16 +125,13 @@ average_by_gene <- function(mat, genes) {
 rnai_df_avg   <- average_by_gene(rnai_df, rnai_genes)
 crispr_df_avg <- average_by_gene(crispr_df, crispr_genes)
 
-# Common genes
-common_genes <- Reduce(intersect, list(
-  rownames(seurat_obj@assays$RNA@counts),
-  colnames(rnai_df_avg),
-  colnames(crispr_df_avg)
-))
+# CRISPR: Seurat와 cell line 겹치는 것만 필터링
+common_crispr_cells <- intersect(rownames(seurat_obj@meta.data), rownames(crispr_df_avg))
+seurat_obj@misc$CRISPR_SCORES <- crispr_df_avg[common_crispr_cells, , drop = FALSE]
 
-# Save into Seurat
-seurat_obj@misc$CRISPR_SCORES <- crispr_df_avg[rownames(seurat_obj@meta.data), common_genes]
-seurat_obj@misc$RNAi_SCORES   <- rnai_df_avg[rownames(seurat_obj@meta.data), common_genes]
+# RNAi: Seurat와 cell line 겹치는 것만 필터링
+common_rnai_cells <- intersect(rownames(seurat_obj@meta.data), rownames(rnai_df_avg))
+seurat_obj@misc$RNAi_SCORES <- rnai_df_avg[common_rnai_cells, , drop = FALSE]
 
 
 #============================#
@@ -227,5 +224,9 @@ get_multi_omics_gene_values <- function(seurat_obj, cell_line, gene_symbol, map_
 
 
 # Example usage:
-get_multi_omics_gene_values(seurat_obj, "OCIAML5_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE", "DNMT3A")
-get_multi_omics_gene_values(seurat_obj, "OCIAML5_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE", "TP53")
+get_multi_omics_gene_values(seurat_obj, "OCIAML5_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE", "NRAS")
+get_multi_omics_gene_values(seurat_obj, "CAL120_BREAST", "TP53")
+
+
+
+
