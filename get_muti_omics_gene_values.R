@@ -34,6 +34,34 @@ rownames(expr_matrix) <- map_tbl$hgnc_symbol[match(ensembl_ids, map_tbl$ensembl_
 expr_matrix <- expr_matrix[!is.na(rownames(expr_matrix)) & !duplicated(rownames(expr_matrix)), ]
 seurat_obj[["RNA"]] <- CreateAssayObject(counts = expr_matrix)
 
+# 1. Normalize (LogNormalize)
+seurat_obj <- NormalizeData(
+  seurat_obj,
+  normalization.method = "LogNormalize",
+  scale.factor = 10000
+)
+
+# 2. Identify variable features
+seurat_obj <- FindVariableFeatures(
+  seurat_obj,
+  selection.method = "vst",
+  nfeatures = 2000
+)
+
+# 3. Scale data (z-score normalization across cells)
+seurat_obj <- ScaleData(seurat_obj)
+
+# 4. PCA
+seurat_obj <- RunPCA(seurat_obj, features = VariableFeatures(seurat_obj))
+
+# 5. Neighborhood graph
+seurat_obj <- FindNeighbors(seurat_obj, dims = 1:20)
+
+# 6. Clustering
+seurat_obj <- FindClusters(seurat_obj, resolution = 0.5)
+
+# 7. UMAP
+seurat_obj <- RunUMAP(seurat_obj, dims = 1:20)
 
 #============================#
 # 2. Protein: MS & PPRA
@@ -143,26 +171,31 @@ map_genes_to_uniprot <- function(gene_symbols, map_table) {
 
 # 통합된 멀티오믹스 조회 함수
 get_multi_omics_gene_values <- function(seurat_obj, cell_line, gene_symbol, map_table = gene_uniprot_map) {
-  # gene symbol → UniProt ID 매핑 (1개짜리지만 일괄 처리 함수 사용)
+  # 1. gene symbol → UniProt ID
   uniprot_id <- map_genes_to_uniprot(gene_symbol, map_table)[[1]]
-  if (is.na(uniprot_id)) uniprot_id <- NULL
+  if (is.na(uniprot_id) || is.null(uniprot_id)) uniprot_id <- NULL
   
-  # RNA counts
-  rna_val <- tryCatch({
+  # 2. RNA raw counts
+  rna_raw <- tryCatch({
     seurat_obj@assays$RNA@counts[gene_symbol, cell_line]
   }, error = function(e) NA)
   
-  # CRISPR
+  # 3. RNA normalized (log-normalized)
+  rna_norm <- tryCatch({
+    seurat_obj@assays$RNA@data[gene_symbol, cell_line]
+  }, error = function(e) NA)
+  
+  # 4. CRISPR
   crispr_val <- tryCatch({
     seurat_obj@misc$CRISPR_SCORES[cell_line, gene_symbol]
   }, error = function(e) NA)
   
-  # RNAi
+  # 5. RNAi
   rnai_val <- tryCatch({
     seurat_obj@misc$RNAi_SCORES[cell_line, gene_symbol]
   }, error = function(e) NA)
   
-  # MS proteomics
+  # 6. MS proteomics
   ms_val <- tryCatch({
     if (!is.null(uniprot_id)) {
       seurat_obj@misc$MS_PROTEOMICS[cell_line, uniprot_id]
@@ -171,7 +204,7 @@ get_multi_omics_gene_values <- function(seurat_obj, cell_line, gene_symbol, map_
     }
   }, error = function(e) NA)
   
-  # PPRA proteomics
+  # 7. PPRA proteomics
   ppra_val <- tryCatch({
     if (!is.null(uniprot_id)) {
       seurat_obj@misc$PPRA_PROTEOMICS[cell_line, uniprot_id]
@@ -180,14 +213,19 @@ get_multi_omics_gene_values <- function(seurat_obj, cell_line, gene_symbol, map_
     }
   }, error = function(e) NA)
   
+  # 8. Return all
   return(list(
-    RNA_count     = rna_val,
-    CRISPR_score  = crispr_val,
-    RNAi_score    = rnai_val,
-    MS_protein    = ms_val,
-    PPRA_phospho  = ppra_val,
-    UniProt_ID    = uniprot_id
+    RNA_raw_counts     = rna_raw,
+    RNA_logNormalized  = rna_norm,
+    CRISPR_score       = crispr_val,
+    RNAi_score         = rnai_val,
+    MS_protein         = ms_val,
+    PPRA_phospho       = ppra_val,
+    UniProt_ID         = uniprot_id
   ))
 }
+
+
 # Example usage:
-get_multi_omics_gene_values(seurat_obj, "CAL51_BREAST", "TP53")
+get_multi_omics_gene_values(seurat_obj, "OCIAML5_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE", "DNMT3A")
+get_multi_omics_gene_values(seurat_obj, "OCIAML5_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE", "TP53")
