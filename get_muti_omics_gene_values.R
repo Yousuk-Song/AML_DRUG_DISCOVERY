@@ -103,12 +103,12 @@ rnai_matrix <- mat(parse_gctx("/data/processed_data/scRSEQ_AML/DRUG/CCLE/RNAi_Sc
 crispr_matrix <- mat(parse_gctx("/data/processed_data/scRSEQ_AML/DRUG/CCLE/CRISPR_Screens/Achilles_v3.3.8.Gs.gct"))
 
 # Common cell lines
-common_cell_lines <- Reduce(intersect, list(
-  colnames(seurat_obj), colnames(rnai_matrix), colnames(crispr_matrix)))
+#common_cell_lines <- Reduce(intersect, list(
+#  colnames(seurat_obj), colnames(rnai_matrix), colnames(crispr_matrix)))
 
 # Subset
-rnai_df <- t(rnai_matrix[, common_cell_lines])
-crispr_df <- t(crispr_matrix[, common_cell_lines])
+rnai_df <- t(rnai_matrix)
+crispr_df <- t(crispr_matrix)
 
 # Extract gene names
 rnai_genes <- sapply(strsplit(colnames(rnai_df), "_"), `[`, 1)
@@ -237,4 +237,7 @@ get_multi_omics_gene_values <- function(seurat_obj, cell_line, gene_symbol, map_
 get_multi_omics_gene_values(seurat_obj, "OCIAML5_HAEMATOPOIETIC_AND_LYMPHOID_TISSUE", "NRAS")
 get_multi_omics_gene_values(seurat_obj, "CAL120_BREAST", "TP53")
 
-#saveRDS(seurat_obj, "/data/processed_data/scRSEQ_AML/DRUG/CCLE/CCLE_multi_omics_data.rds")                       
+
+saveRDS(seurat_obj, "/data/processed_data/scRSEQ_AML/DRUG/CCLE/CCLE_multi_omics_data.rds")
+
+
